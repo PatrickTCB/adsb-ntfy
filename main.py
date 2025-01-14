@@ -138,8 +138,12 @@ if __name__ == "__main__":
         if acd["dist"] < float(conf["ntfy_distance"]):
             topic = conf["ntfy_topic"]
             title = "{} Flying By Closely!".format(acd["type"])
-
-            message = "An {} with callsign {} flying {} is only {} km from {}".format(acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["home_name"])
+            firstLetterOfType = str(acd["type"][0]).upper()
+            article = "A"
+            articleAnList = ["A", "E", "F", "H", "I", "L", "M", "N", "O", "R", "S", "X"]
+            if firstLetterOfType in articleAnList:
+                article = "An"
+            message = "{} {} with callsign {} flying {} is only {} km from {}".format(article, acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["home_name"])
             url = acd["url"]
             ntfy(host=conf["ntfy_host"], topic=topic, message=message, title=title, prio="2", click=url)
     now = datetime.now()
