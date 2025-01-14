@@ -138,7 +138,8 @@ if __name__ == "__main__":
         if acd["dist"] < float(conf["ntfy_distance"]):
             topic = conf["ntfy_topic"]
             title = "{} Flying By Closely!".format(acd["type"])
-            message = "An {} with callsign {} flying {} is only {} km from {}".format(conf["home_name"], acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"])
+
+            message = "An {} with callsign {} flying {} is only {} km from {}".format(acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["home_name"])
             url = acd["url"]
             ntfy(host=conf["ntfy_host"], topic=topic, message=message, title=title, prio="2", click=url)
     now = datetime.now()
