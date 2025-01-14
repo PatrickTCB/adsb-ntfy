@@ -1,0 +1,6 @@
+geographiclib==2.0
+geopy==2.4.1
+PyYAML==6.0.2
+requests==2.32.3
+urllib3==2.3.0
+zstd==1.5.6.1
