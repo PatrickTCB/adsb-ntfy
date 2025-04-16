@@ -1,8 +1,0 @@
----
-tar1090_host: "http://localhost:9090"
-ntfy_host: "http://localhost"
-ntfy_topic: "adsb"
-ntfy_distance: 1.5
-home_lat: 53.338125
-home_lon: -6.259412
-home_name: "St Stephen's Green"
