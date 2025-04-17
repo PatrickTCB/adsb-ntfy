@@ -11,6 +11,7 @@ RUN python3 -m pip install zstd
 RUN python3 -m pip install requests
 RUN python3 -m pip install tzdata
 RUN python3 -m pip install pyyaml
+RUN python3 -m pip install curlify
 
 WORKDIR /app/
 

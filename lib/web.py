@@ -46,12 +46,26 @@ def get(host, path, headers={}, params={}, printMe=False, ignoreErrors=False, se
         responseName = "error-{}{}.json".format(result.status_code, str(fullurl.replace("https:", "")).replace("/", "."))
         try:
             responseDict = json.loads(result.text)
-            responseDict["path called"] = path
-            responseDict["responseHeaders"] = result.headers
-            saveResponse(responseName, json.dumps(responseDict))
+            responseDict["path"] = path
+            responseDict["responseHeaders"] = dict(result.headers)
+            try:
+                import curlify
+                requestSent = result.request
+                responseDict["curl"] = curlify.to_curl(requestSent)
+            except:
+                print("Couldn't add curl version of request to error dict\nInstall curlify if you want that to work.")
+            saveResponse(responseName, json.dumps(responseDict, default=str))
         except:
-            output = "{}\n{}".format(result.headers, result.text)
-            saveResponse(responseName, output)
+            output = {}
+            output["headers"] = dict(result.headers)
+            output["text"] = result.text
+            try:
+                import curlify
+                requestSent = result.request
+                output["curl"] = curlify.to_curl(requestSent)
+            except:
+                print("Couldn't add curl version of request to error dict\nInstall curlify if you want that to work.")
+            saveResponse(responseName, json.dumps(output, default=str))
         print("Error response saved to {}".format(responseName))
         return False
 
@@ -92,13 +106,25 @@ def post(host, path, contentType, body={}, jsonBody=False, headers={}, printMe=F
         responseName = "error-{}{}.json".format(result.status_code, host.replace("https://", ""), path.replace("/", "."))
         try:
             responseDict = json.loads(result.text)
-            responseDict["responseHeaders"] = result.headers
-            responseDict["host"] = host
-            responseDict["path called"] = path
-            responseDict["requestBody"] = body
-            saveResponse(responseName, json.dumps(responseDict))
+            responseDict["path"] = path
+            responseDict["responseHeaders"] = dict(result.headers)
+            try:
+                import curlify
+                requestSent = result.request
+                responseDict["curl"] = curlify.to_curl(requestSent)
+            except:
+                print("Couldn't add curl version of request to error dict\nInstall curlify if you want that to work.")
+            saveResponse(responseName, json.dumps(responseDict, default=str))
         except:
-            output = "{}\n{}".format(result.headers, result.text)
-            saveResponse(responseName, output)
+            output = {}
+            output["headers"] = dict(result.headers)
+            output["text"] = result.text
+            try:
+                import curlify
+                requestSent = result.request
+                output["curl"] = curlify.to_curl(requestSent)
+            except:
+                print("Couldn't add curl version of request to error dict\nInstall curlify if you want that to work.")
+            saveResponse(responseName, json.dumps(output, default=str))
         print("Error response saved to {}".format(responseName))
         return False
