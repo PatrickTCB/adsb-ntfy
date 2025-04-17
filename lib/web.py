@@ -23,7 +23,7 @@ def get(host, path, headers={}, params={}, printMe=False, ignoreErrors=False, se
         s.headers[k] = headers[k]
     
     if "custom_headers" in conf.keys():
-        customHeaderDomains = conf["custom_headers_domains"]
+        customHeaderDomains = conf["custom_header_domains"]
         if host in customHeaderDomains:
             customHeaders = conf["custom_headers"]
             for h in customHeaders.keys():
@@ -84,7 +84,7 @@ def post(host, path, contentType, body={}, jsonBody=False, headers={}, printMe=F
     for k in headers.keys():
         s.headers[k] = headers[k]
     if "custom_headers" in conf.keys():
-        customHeaderDomains = conf["custom_headers_domains"]
+        customHeaderDomains = conf["custom_header_domains"]
         if host in customHeaderDomains:
             customHeaders = conf["custom_headers"]
             for h in customHeaders.keys():
