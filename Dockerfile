@@ -4,6 +4,7 @@ RUN mkdir app
 ADD ./lib app/lib
 ADD ./bincraft.py app/
 ADD ./main.py app/
+ADD ./conf.yml app/
 
 RUN python3 -m pip install geopy
 RUN python3 -m pip install zstd
