@@ -9,7 +9,7 @@ RUN python3 -m pip install geopy
 RUN python3 -m pip install zstd
 RUN python3 -m pip install requests
 RUN python3 -m pip install tzdata
-RUN python3 -m pip install yaml
+RUN python3 -m pip install pyyaml
 
 WORKDIR /app/
 
