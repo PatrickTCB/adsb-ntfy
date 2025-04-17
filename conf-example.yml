@@ -1,0 +1,20 @@
+---
+tar1090_host: "http://localhost:9090"
+ntfy_host: "http://localhost:9091"
+ntfy_topic: "adsb"
+ntfy_distance: 1.5
+ntfy_prio: 2
+sleep_interval: 60
+lat: 53.338125
+lon: -6.259412
+location_name: "St Stephen's Green"
+tz: "Europe/Berlin"
+
+# Uncomment and put data here if you need custom headers added to every web request to certain domains. You might need this for your tar1090 endpoint, little logger endpoint, or both.
+custom_headers: 
+  WAF_BYPASS: "yes please"
+custom_headers_domains: ['https://flights.example.ca','https://flights.example.de']
+
+# Uncomment and fill out if you're using Little Logger (https://github.com/PatrickTCB/little-logger)
+logger_application_name: "adsb"
+logger_host: "https://logger.example.ca"
