@@ -1,9 +1,10 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+import os
 import struct
 import math
 import zstd
-import requests
+from lib import web
 
 def unpack(fmt,buff):
 	vals = struct.iter_unpack(fmt, buff)
@@ -53,8 +54,9 @@ def getType(t):
 		return 'mode_ac'
 	return 'unknown'
 
-def binCraftReader(url):
-	r = requests.get(url)
+def binCraftReader(conf):
+	path = "/data/aircraft.binCraft.zst"
+	r = web.get(host=conf["tar1090_host"], path=path, conf=conf)
 	data = r.content
 
 	data = zstd.decompress(data)
