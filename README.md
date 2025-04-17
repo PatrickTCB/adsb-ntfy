@@ -9,9 +9,19 @@ The aircraft that can be seen by the [tar1090](https://github.com/wiedehopf/tar1
 1. Setup environment
 `pip install -r requirements.txt`
 
-2. Set enviornment variables in `conf.yml`. The default setup is for purely selfhosted tar1090 and ntfy servers available on localhost, and the setup for St Stephen's Green in Dublin. You'll want to change all of those variables.
+2. Set variables in `conf.yml`. The default setup is for purely selfhosted tar1090 and ntfy servers available on localhost, and the setup for St Stephen's Green in Dublin. You'll want to change all of those variables.
 
 3. Run the script. I run it as a cron job scheduled for every minute, you can run it however you want.
+
+# Custom Headers
+
+In case your tar1090 application is secured by Cloudflare, Fastly, or AWS Cloud Front, you might need to pass some bot manager bypass headers on your requests.
+
+Add your custom headers and the domains to send them too in your `conf.yaml`.
+
+# Logging
+
+Integration with my bare bones logging server [little logger](https://github.com/PatrickTCB/little-logger) in baked in. Uncomment and fill out the relevant ENV variables in order to use it.
 
 # Rate Limits
 
