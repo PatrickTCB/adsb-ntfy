@@ -1,8 +1,11 @@
 import json
 import time
 import geopy.distance
-import requests
 import yaml
+import sys
+from lib import logger, web
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from datetime import datetime
 from bincraft import binCraftReader
@@ -22,7 +25,6 @@ def stringToFile(fileName, contentsRaw):
         output_file.close()
 
 def ntfy(host, topic, message, title="", prio="3", click="", attach="", at="", actions=[], verbose=False):
-    url = "/{}".format(host, topic)
     headers = {}
     headers["Priority"] = "{}".format(prio)
     if title != "":
@@ -40,8 +42,8 @@ def ntfy(host, topic, message, title="", prio="3", click="", attach="", at="", a
         for action in actions:
             actionHeaderValue = "{}{},{},{},{}\\\n".format(actionHeaderValue, action.kind, action.label, action.url, action.parameters)
         headers["Action"] = actionHeaderValue
-    a = requests.post(url,headers=headers, data=message.encode(encoding='utf-8'))
-    if a == 200:
+    a = web.post(host=host, path=topic, body=message.encode(encoding='utf-8'))
+    if a.status_code == 200:
         return True
     else:
         if verbose:
@@ -49,55 +51,40 @@ def ntfy(host, topic, message, title="", prio="3", click="", attach="", at="", a
             print("Headers: {}".format(headers))
         return False
 
-def nearbyAircraft(url):
-    text = binCraftReader(url)
+def nearbyAircraft(host):
+    text = binCraftReader(host)
     #stringToFile("aircraft.json", json.dumps(text, indent=4))
     return text
 
-def flightDetails(planes):
+def flightDetails(planes, conf):
     d = []
     host = "https://api.adsb.lol"
     aircraftList = []
     callsignToHex = {}
     for plane in planes:
         print("Looking up details for aircraft registration: {}                ".format(plane), end="\r")
-        f = {}
         path = "/v2/registration/{}".format(plane)
-        fullurl = urljoin("https://{}".format(host), path)
-        s = requests.Session()
-        raw = s.get(fullurl)
-        if raw.status_code == 200:
-            r = json.loads(raw.text)
-            for ac in r["ac"]:
-                if type(0) == type(ac["alt_baro"]):
-                    if ac["alt_baro"] > 0:
-                        aircraft = {}
-                        aircraft["lng"] = ac["lon"]
-                        aircraft["lat"] = ac["lat"]
-                        aircraft["callsign"] = ac["flight"].strip()
-                        callsignToHex[ac["flight"].strip()] = ac["hex"]
-                        aircraftList.append(aircraft)
-                    else:
-                        print("\nalt_baro was {}".format(ac["alt_baro"]))
+        raw = web.get(host=host, path=path)
+        r = json.loads(raw.text)
+        for ac in r["ac"]:
+            if type(0) == type(ac["alt_baro"]):
+                if ac["alt_baro"] > 0:
+                    aircraft = {}
+                    aircraft["lng"] = ac["lon"]
+                    aircraft["lat"] = ac["lat"]
+                    aircraft["callsign"] = ac["flight"].strip()
+                    callsignToHex[ac["flight"].strip()] = ac["hex"]
+                    aircraftList.append(aircraft)
                 else:
                     print("\nalt_baro was {}".format(ac["alt_baro"]))
-        else:
-            print("Error when retrieving info from {}".format(host))
-            print("Status: " + str(raw.status_code))
-            print("Attempted to get {}".format(fullurl))
-            print("{}".format(raw.text))
-            responseName = "error-{}{}.txt".format(raw.status_code, str(fullurl.replace("https://", "")).replace("http://", "").replace("/", "."))
-            stringToFile(responseName, raw.text)
-            print("Error response saved to {}".format(responseName))
+            else:
+                print("\nalt_baro was {}".format(ac["alt_baro"]))
         time.sleep(1)
     body = {}
     body["planes"] = aircraftList
     print("\nGetting routes for {} aircraft.                ".format(len(aircraftList)))
     path = "/api/0/routeset"
-    fullurl = urljoin(host, path)
-    ps = requests.Session()
-    ps.headers["Content-Type"] = "application/json"
-    rawDetails = ps.post(fullurl, json=body)
+    rawDetails = web.post(host=host, path=path, contentType="application/json", body=body, jsonBody=True, ignoreErrors=True, conf=conf)
     resp = json.loads(rawDetails.text)
     routes = []
     for route in resp:
@@ -107,45 +94,52 @@ def flightDetails(planes):
 
 if __name__ == "__main__":
     conf = yaml.safe_load(Path('conf.yml').read_text())
-    now = datetime.now()
-    todayDate = now.strftime("%Y-%m-%d %H:%M:%S")
-    print("Starting: {}".format(todayDate))
-    tar1090URL = "{}/data/aircraft.binCraft.zst".format(conf['tar1090_host'])
-    aircraft = nearbyAircraft(tar1090URL)
-    #stringToFile("nearby-aircraft.json", json.dumps(aircraft, indent=4))
-    planes = []
-    acInfo = {}
-    for a in aircraft["aircraft"]:
-        if "r" in a.keys():
-            if a["r"] != "":
-                if a["lat"] != 0.0:
-                    planes.append(a["r"])
-                    acd = {}
-                    acd["hex"] = a["hex"]
-                    acd["url"] = "{}/?icao={}".format(conf['TAR1090_HOST'], a["hex"])
-                    coords_home = (float(conf("home_lat")), float(conf["home_lon"]))
-                    coords_plane = (a["lon"], a["lat"])
-                    dist = geopy.distance.geodesic(coords_home, coords_plane).km
-                    acd["dist"] = round(dist, 2)
-                    acd["type"] = a["t"]
-                    #print("{} and {} are {}km apart".format(coords_home, coords_plane, round(dist, 2)))
-                    acInfo[a["hex"]] = acd
-    routes = flightDetails(planes)
-    #common.stringToFile("routes.json", json.dumps(routes, indent=4))
-    for route in routes:
-        acd = acInfo[route["hex"]]
-        print("{}: {} ({}km away)".format(route["callsign"], route["_airport_codes_iata"], acd["dist"]))
-        if acd["dist"] < float(conf["ntfy_distance"]):
-            topic = conf["ntfy_topic"]
-            title = "{} Flying By Closely!".format(acd["type"])
-            firstLetterOfType = str(acd["type"][0]).upper()
-            article = "A"
-            articleAnList = ["A", "E", "F", "H", "I", "L", "M", "N", "O", "R", "S", "X"]
-            if firstLetterOfType in articleAnList:
-                article = "An"
-            message = "{} {} with callsign {} flying {} is only {} km from {}".format(article, acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["home_name"])
-            url = acd["url"]
-            ntfy(host=conf["ntfy_host"], topic=topic, message=message, title=title, prio="2", click=url)
-    now = datetime.now()
-    todayDate = now.strftime("%Y-%m-%d %H:%M:%S")
-    print("Ending: {}".format(todayDate))
+    notifyDistance = conf["ntfy_distance"]
+    sleepInterval = int(conf["sleep_interval"])
+    while True:
+        now = datetime.now(ZoneInfo(conf["tz"]))
+        todayDate = now.strftime("%Y-%m-%d %H:%M:%S")
+        tar1090Host = conf["tar1090_host"]
+        print("Starting: {}".format(todayDate))
+        aircraft = nearbyAircraft(conf)
+        
+        #common.stringToFile("nearby-aircraft.json", json.dumps(aircraft, indent=4))
+        planes = []
+        acInfo = {}
+        for a in aircraft["aircraft"]:
+            if "r" in a.keys():
+                if a["r"] != "":
+                    if a["lat"] != 0.0:
+                        planes.append(a["r"])
+                        acd = {}
+                        acd["hex"] = a["hex"]
+                        acd["url"] = "{}/?icao={}".format(tar1090Host, a["hex"])
+                        coords_home = (float(conf["lat"]), float(conf["lon"]))
+                        coords_plane = (a["lon"], a["lat"])
+                        dist = geopy.distance.geodesic(coords_home, coords_plane).km
+                        acd["dist"] = round(dist, 2)
+                        acd["type"] = a["t"]
+                        #print("{} and {} are {}km apart".format(coords_home, coords_plane, round(dist, 2)))
+                        acInfo[a["hex"]] = acd
+        routes = flightDetails(planes, conf)
+        #common.stringToFile("routes.json", json.dumps(routes, indent=4))
+        for route in routes:
+            acd = acInfo[route["hex"]]
+            print("{}: {} ({}km away)".format(route["callsign"], route["_airport_codes_iata"], acd["dist"]))
+            acd["route"] = route["_airport_codes_iata"]
+            acd["callsign"] = route["callsign"]
+            logger.log(message=acd, conf=conf)
+            if acd["dist"] < notifyDistance:
+                title = "{} Flying By Closely!".format(acd["type"])
+                firstLetterOfType = str(acd["type"][0]).upper()
+                article = "A"
+                articleAnList = ["A", "E", "F", "H", "I", "L", "M", "N", "O", "R", "S", "X"]
+                if firstLetterOfType in articleAnList:
+                    article = "An"
+                message = "{} {} with callsign {} flying {} is only {} km from {}".format(article, acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["location_name"])
+                url = acd["url"]
+                ntfy(host=conf["NTFY_HOST"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=url)
+        now = datetime.now(ZoneInfo(conf["tz"]))
+        todayDate = now.strftime("%Y-%m-%d %H:%M:%S")
+        print("Ending: {}".format(todayDate))
+        time.sleep(sleepInterval)
