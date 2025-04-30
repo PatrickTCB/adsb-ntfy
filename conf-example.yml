@@ -4,6 +4,7 @@ ntfy_host: "http://localhost:9091"
 ntfy_topic: "adsb"
 ntfy_distance: 1.5
 ntfy_prio: 2
+ntfy_number: 20
 sleep_interval: 60
 lat: 53.338125
 lon: -6.259412

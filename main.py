@@ -121,6 +121,12 @@ if __name__ == "__main__":
                         acd["type"] = a["t"]
                         #print("{} and {} are {}km apart".format(coords_home, coords_plane, round(dist, 2)))
                         acInfo[a["hex"]] = acd
+        ntfyNumber = conf["ntfy_number"]
+        planesWithinRange = len(planes)
+        if planesWithinRange > ntfyNumber:
+            message = "{} can see {} different aircraft right now!"
+            title = "Lots of Traffic at {}!"
+            ntfy(host=conf["NTFY_HOST"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=tar1090Host)
         routes = flightDetails(planes, conf)
         #common.stringToFile("routes.json", json.dumps(routes, indent=4))
         for route in routes:

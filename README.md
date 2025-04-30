@@ -10,6 +10,7 @@ The aircraft that can be seen by the [tar1090](https://github.com/wiedehopf/tar1
 `pip install -r requirements.txt`
 
 2. Set variables in `conf.yml`. The default setup is for purely selfhosted tar1090 and ntfy servers available on localhost, and the setup for St Stephen's Green in Dublin. You'll want to change all of those variables.
+   1. There's also the `ntfy_number` which is meant to notify you when the antenna can see more that `x` number of planes at once. Check your `graphs1090` info to see what the best number to set there is for you.
 
 3. Run the script. I run it as a cron job scheduled for every minute, you can run it however you want.
 
