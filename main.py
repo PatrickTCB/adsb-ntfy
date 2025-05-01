@@ -103,7 +103,7 @@ if __name__ == "__main__":
         print("Starting: {}".format(todayDate))
         aircraft = nearbyAircraft(conf)
         
-        #common.stringToFile("nearby-aircraft.json", json.dumps(aircraft, indent=4))
+        #stringToFile("nearby-aircraft.json", json.dumps(aircraft, indent=4))
         planes = []
         acInfo = {}
         for a in aircraft["aircraft"]:
@@ -128,7 +128,7 @@ if __name__ == "__main__":
             title = "Lots of Traffic at {}!"
             ntfy(host=conf["NTFY_HOST"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=tar1090Host)
         routes = flightDetails(planes, conf)
-        #common.stringToFile("routes.json", json.dumps(routes, indent=4))
+        #stringToFile("routes.json", json.dumps(routes, indent=4))
         for route in routes:
             acd = acInfo[route["hex"]]
             print("{}: {} ({}km away)".format(route["callsign"], route["_airport_codes_iata"], acd["dist"]))
