@@ -5,6 +5,7 @@ ntfy_topic: "adsb"
 ntfy_distance: 1.5
 ntfy_prio: 2
 ntfy_number: 20
+ntfy_watched_flights: ["ABC123", "DEF456"]
 sleep_interval: 60
 lat: 53.338125
 lon: -6.259412
