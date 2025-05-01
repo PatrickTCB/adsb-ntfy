@@ -42,7 +42,7 @@ def ntfy(host, topic, message, title="", prio="3", click="", attach="", at="", a
         for action in actions:
             actionHeaderValue = "{}{},{},{},{}\\\n".format(actionHeaderValue, action.kind, action.label, action.url, action.parameters)
         headers["Action"] = actionHeaderValue
-    a = web.post(host=host, path=topic, body=message.encode(encoding='utf-8'))
+    a = web.post(host=host, contentType="text/plain", path=topic, body=message.encode(encoding='utf-8'))
     if a.status_code == 200:
         return True
     else:
@@ -57,7 +57,6 @@ def nearbyAircraft(host):
     return text
 
 def flightDetails(planes, conf):
-    d = []
     host = "https://api.adsb.lol"
     aircraftList = []
     callsignToHex = {}
@@ -93,17 +92,16 @@ def flightDetails(planes, conf):
     return routes
 
 if __name__ == "__main__":
-    conf = yaml.safe_load(Path('conf.yml').read_text())
-    notifyDistance = conf["ntfy_distance"]
-    sleepInterval = int(conf["sleep_interval"])
     while True:
+        conf = yaml.safe_load(Path('conf.yml').read_text())
+        notifyDistance = conf["ntfy_distance"]
+        sleepInterval = int(conf["sleep_interval"])
         now = datetime.now(ZoneInfo(conf["tz"]))
         todayDate = now.strftime("%Y-%m-%d %H:%M:%S")
         tar1090Host = conf["tar1090_host"]
         print("Starting: {}".format(todayDate))
         aircraft = nearbyAircraft(conf)
-        
-        #stringToFile("nearby-aircraft.json", json.dumps(aircraft, indent=4))
+        stringToFile("nearby-aircraft.json", json.dumps(aircraft, indent=4))
         planes = []
         acInfo = {}
         for a in aircraft["aircraft"]:
@@ -113,6 +111,10 @@ if __name__ == "__main__":
                         planes.append(a["r"])
                         acd = {}
                         acd["hex"] = a["hex"]
+                        if "flight" in a.keys():
+                            acd["flight"] = a["flight"]
+                        else:
+                            acd["flight"] = "unknown"
                         acd["url"] = "{}/?icao={}".format(tar1090Host, a["hex"])
                         coords_home = (float(conf["lat"]), float(conf["lon"]))
                         coords_plane = (a["lon"], a["lat"])
@@ -126,25 +128,37 @@ if __name__ == "__main__":
         if planesWithinRange > ntfyNumber:
             message = "{} can see {} different aircraft right now!"
             title = "Lots of Traffic at {}!"
-            ntfy(host=conf["NTFY_HOST"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=tar1090Host)
+            ntfy(host=conf["ntfy_host"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=tar1090Host)
         routes = flightDetails(planes, conf)
-        #stringToFile("routes.json", json.dumps(routes, indent=4))
+        stringToFile("routes.json", json.dumps(routes, indent=4))
         for route in routes:
             acd = acInfo[route["hex"]]
+            watchedFlights = conf["ntfy_watched_flights"]
             print("{}: {} ({}km away)".format(route["callsign"], route["_airport_codes_iata"], acd["dist"]))
             acd["route"] = route["_airport_codes_iata"]
             acd["callsign"] = route["callsign"]
             logger.log(message=acd, conf=conf)
+            notify = False
+            if route["callsign"] in watchedFlights:
+                print("{} is a watched flight".format(route["callsign"]))
+                notify = True
             if acd["dist"] < notifyDistance:
-                title = "{} Flying By Closely!".format(acd["type"])
-                firstLetterOfType = str(acd["type"][0]).upper()
-                article = "A"
-                articleAnList = ["A", "E", "F", "H", "I", "L", "M", "N", "O", "R", "S", "X"]
-                if firstLetterOfType in articleAnList:
-                    article = "An"
-                message = "{} {} with callsign {} flying {} is only {} km from {}".format(article, acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["location_name"])
-                url = acd["url"]
-                ntfy(host=conf["NTFY_HOST"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=url)
+                print("{} is within {}km of {}".format(route["callsign"], acd["dist"], conf["location_name"]))
+                notify = True
+            title = "{} Flying By Closely!".format(acd["type"])
+            firstLetterOfType = str(acd["type"][0]).upper()
+            article = "A"
+            articleAnList = ["A", "E", "F", "H", "I", "L", "M", "N", "O", "R", "S", "X"]
+            if firstLetterOfType in articleAnList:
+                article = "An"
+            message = "{} {} with callsign {} flying {} is only {} km from {}".format(article, acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["location_name"])
+            url = acd["url"]
+            print("notify is {}".format(notify))
+            if notify:
+                print("I'm inside the notify block")
+                ntfy(host=conf["ntfy_host"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=url)
+            else:
+                print("No notification for {}".format(route["callsign"]))
         now = datetime.now(ZoneInfo(conf["tz"]))
         todayDate = now.strftime("%Y-%m-%d %H:%M:%S")
         print("Ending: {}".format(todayDate))
