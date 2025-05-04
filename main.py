@@ -126,8 +126,8 @@ if __name__ == "__main__":
         ntfyNumber = conf["ntfy_number"]
         planesWithinRange = len(planes)
         if planesWithinRange > ntfyNumber:
-            message = "{} can see {} different aircraft right now!"
-            title = "Lots of Traffic at {}!"
+            message = "{} can see {} different aircraft right now!".format(planesWithinRange, conf["location_name"])
+            title = "Lots of Traffic at {}!".format(conf["location_name"])
             ntfy(host=conf["ntfy_host"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=tar1090Host)
         routes = flightDetails(planes, conf)
         stringToFile("routes.json", json.dumps(routes, indent=4))
