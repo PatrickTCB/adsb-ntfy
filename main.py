@@ -99,6 +99,9 @@ if __name__ == "__main__":
         now = datetime.now(ZoneInfo(conf["tz"]))
         todayDate = now.strftime("%Y-%m-%d %H:%M:%S")
         tar1090Host = conf["tar1090_host"]
+        tar1090PublicHost = tar1090Host
+        if "tar1090_public_host" in conf.keys():
+            tar1090PublicHost = conf["tar1090_public_host"]
         print("Starting: {}".format(todayDate))
         aircraft = nearbyAircraft(conf)
         stringToFile("nearby-aircraft.json", json.dumps(aircraft, indent=4))
@@ -115,7 +118,7 @@ if __name__ == "__main__":
                             acd["flight"] = a["flight"]
                         else:
                             acd["flight"] = "unknown"
-                        acd["url"] = "{}/?icao={}".format(tar1090Host, a["hex"])
+                        acd["url"] = "{}/?icao={}".format(tar1090PublicHost, a["hex"])
                         coords_home = (float(conf["lat"]), float(conf["lon"]))
                         coords_plane = (a["lon"], a["lat"])
                         dist = geopy.distance.geodesic(coords_home, coords_plane).km
@@ -126,9 +129,9 @@ if __name__ == "__main__":
         ntfyNumber = conf["ntfy_number"]
         planesWithinRange = len(planes)
         if planesWithinRange > ntfyNumber:
-            message = "{} can see {} different aircraft right now!".format(conf["location_name"], planesWithinRange)
+            message = "{} can see {} different aircraft right now!\n{}".format(conf["location_name"], planesWithinRange, tar1090PublicHost)
             title = "Lots of Traffic at {}!".format(conf["location_name"])
-            ntfy(host=conf["ntfy_host"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=tar1090Host)
+            ntfy(host=conf["ntfy_host"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=tar1090PublicHost)
         routes = flightDetails(planes, conf)
         stringToFile("routes.json", json.dumps(routes, indent=4))
         for route in routes:
@@ -151,14 +154,11 @@ if __name__ == "__main__":
             articleAnList = ["A", "E", "F", "H", "I", "L", "M", "N", "O", "R", "S", "X"]
             if firstLetterOfType in articleAnList:
                 article = "An"
-            message = "{} {} with callsign {} flying {} is only {} km from {}".format(article, acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["location_name"])
             url = acd["url"]
+            message = "{} {} with callsign {} flying {} is only {} km from {}\n{}".format(article, acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["location_name"], url)
             print("notify is {}".format(notify))
             if notify:
-                print("I'm inside the notify block")
                 ntfy(host=conf["ntfy_host"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=url)
-            else:
-                print("No notification for {}".format(route["callsign"]))
         now = datetime.now(ZoneInfo(conf["tz"]))
         todayDate = now.strftime("%Y-%m-%d %H:%M:%S")
         print("Ending: {}".format(todayDate))
