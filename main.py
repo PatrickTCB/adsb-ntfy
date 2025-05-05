@@ -156,7 +156,6 @@ if __name__ == "__main__":
                 article = "An"
             url = acd["url"]
             message = "{} {} with callsign {} flying {} is only {} km from {}\n{}".format(article, acd["type"], route["callsign"], route["_airport_codes_iata"], acd["dist"], conf["location_name"], url)
-            print("notify is {}".format(notify))
             if notify:
                 ntfy(host=conf["ntfy_host"], topic=conf["ntfy_topic"], message=message, title=title, prio="{}".format(conf["ntfy_prio"]), click=url)
         now = datetime.now(ZoneInfo(conf["tz"]))
