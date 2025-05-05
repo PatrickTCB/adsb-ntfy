@@ -1,5 +1,6 @@
 ---
 tar1090_host: "http://localhost:9090"
+tar1090_public_host: "http://adsb.example.ca" # optional. Set if your tar1090 site has a different host (eg 192.168.29:9090) for users getting these notifications than for the script.
 ntfy_host: "http://localhost:9091"
 ntfy_topic: "adsb"
 ntfy_distance: 1.5
